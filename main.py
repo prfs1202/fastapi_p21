@@ -1,80 +1,68 @@
-from lib2to3.fixes.fix_input import context
+
+import os
+from pathlib import Path
 
 from fastapi import FastAPI
-from starlette.requests import Request
-from starlette.responses import HTMLResponse
-from starlette.staticfiles import StaticFiles
-from starlette.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
+from sqladmin import Admin
+from starlette.middleware.sessions import SessionMiddleware
+from starlette.responses import FileResponse
 
-app = FastAPI()
+from apps.admin import ProductAdmin, CategoryAdmin
+from apps.models import db
+from apps.routers.products import product_router
+from apps.utils.authentication import AuthBackend
+from config import conf
 
-# app.mount("/static", StaticFiles(directory="templates"), name="static")
-
-
-templates = Jinja2Templates(directory="templates")
-
-users = [
-    {
-        "full_name": "Mahmud",
-        "is_member": "Admin",
-        "created_at": "2003/23/12",
-        "status": "active",
-        "email": "nmadur@gmail.com"
-    },
-    {
-        "full_name": "Azizxoja Nabiyev",
-        "is_member": "Member",
-        "created_at": "2024/12/12",
-        "status": "active",
-        "email": "azik7777@gmail.com"
-    },
-    {
-        "full_name": "Sharofiddin",
-        "is_member": "BOSS",
-        "created_at": "1973/12/08",
-        "status": "active",
-        "email": "boss@gmail.com"
-    }, {
-        "full_name": "Malika",
-        "is_member": "Manager",
-        "created_at": "2001/07/12",
-        "status": "active",
-        "email": "Menejer@gmail.com"
-    }, {
-        "full_name": "Muhammadqodir bobo",
-        "is_member": "BOBO",
-        "created_at": "2025/07/12",
-        "status": "active",
-        "email": "BOBO@gmail.com"
-    }, {
-        "full_name": "MuhammadDiyor ROziqov de",
-        "is_member": "Odam nomli inson",
-        "created_at": "2025/07/12",
-        "status": "active",
-        "email": "Diyor@gmail.com"
-    }, {
-        "full_name": "Xadichka ",
-        "is_member": "Admin",
-        "created_at": "2008/07/12",
-        "status": "active",
-        "email": "Xadicha@gmail.com"
-    }
-]
+app = FastAPI(docs_url=None)
+app.add_middleware(SessionMiddleware, secret_key=conf.SECRET_KEY)
+admin = Admin(app, db._engine, authentication_backend=AuthBackend(conf.SECRET_KEY))
+admin.add_view(ProductAdmin)
+admin.add_view(CategoryAdmin)
 
 
-@app.get('/', response_class=HTMLResponse)
-async def read_item(request: Request):
-    context = {
-        "request": request,
-        'users': users
-    }
-    return templates.TemplateResponse('user-list.html', context=context)
+@app.get("/media/{full_path:path}", name='media')
+async def get_media(full_path):
+    image_path = Path(f'media/{full_path}')
+    if not image_path.is_file():
+        return {"error": "Image not found on the server"}
+    return FileResponse(image_path)
 
-# @app.get("/items/{id}", response_class=HTMLResponse)
-# async def read_item(request: Request, id: str):
-#     return templates.TemplateResponse(
-#         request=request, name="item.html", context={"id": id}
-#     )
+
+@app.on_event("startup")
+async def on_startup():
+    if not os.path.exists('static'):
+        os.mkdir('static')
+    app.mount("/static", StaticFiles(directory='static'), name='static')
+    app.include_router(product_router)
+    await db.create_all()
+
+
+@app.on_event("shutdown")
+async def on_startup():
+    pass
+    # db.drop_all()
+
+# @app.get("/", response_class=HTMLResponse)
+# async def read_item(request: Request):
+#     context = {
+#         'users': users
+#     }
+#     return templates.TemplateResponse(request, 'user-list.html', context)
+#
+#
+# @app.get("/users/{id}", response_class=HTMLResponse)
+# async def read_item(request: Request, id: int):
+#     _user = None
+#     for user in users:
+#         if user['id'] == id:
+#             _user = user
+#
+#     context = {
+#         'user': _user
+#     }
+#     return templates.TemplateResponse(request, 'user-detail.html', context)
+
 # @app.get("/")
 # async def root():
 #     return {"message": "Hello World"}
@@ -83,16 +71,3 @@ async def read_item(request: Request):
 # @app.get("/hello/{name}")
 # async def say_hello(name: str):
 #     return {"message": f"Hello {name}"}
-
-
-# # @app.get('/user/id', response_class=HTMLResponse)
-# # async def read_item(request: Request, id:int):
-# #     _user=None
-# #     for user in users:
-# #         if user['id'] == id:
-# #             _user=user
-#
-#     context= {
-#         'user':_user
-#     }
-#     return templates.TemplateResponse('user-detail.html',context=context)

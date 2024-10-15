@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head itemscope itemtype="http://schema.org/WebSite">
@@ -40,33 +39,35 @@
             src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
     <script src="https://netdna.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
     <div class="container bootdey">
-
-        <h4>User detail page ({{ user.full_name }})</h4>
         <div class="row bootstrap snippets bootdey">
-            <div class="col-md-12">
-                <div class="box box-widget widget-user-2">
-                    <div class="widget-user-header bg-yellow">
-                        <div class="widget-user-image">
-                            <img class="img-circle" src="https://bootdey.com/img/Content/avatar/avatar1.png"
-                                 alt="User Avatar"></div>
-                        <h3 class="widget-user-username">{{ user.full_name }}</h3>
-                        <h5 class="widget-user-desc">{{ user.position }}</h5>
-                    </div>
-                    <div class="box-footer no-padding">
-                        <ul class="nav nav-stacked">
-                            <li><a href="#">Projects <span
-                                    class="pull-right badge bg-blue">{{ user.projects }}</span></a></li>
-                            <li><a href="#">Tasks <span class="pull-right badge bg-aqua">{{ user.tasks }}</span></a>
-                            </li>
-                            <li><a href="#">Completed Projects <span
-                                    class="pull-right badge bg-green">{{ user.completed_projects }}</span></a>
-                            </li>
-                            <li><a href="#">Followers <span class="pull-right badge bg-red">{{ user.followers }}</span></a>
-                            </li>
-                        </ul>
+            {% for user in users %}
+            <a href="/users/{{ user.id }}">
+                <div class="col-md-4">
+                    <div class="box box-widget widget-user-2">
+                        <div class="widget-user-header bg-yellow">
+                            <div class="widget-user-image">
+                                <img class="img-circle" src="https://bootdey.com/img/Content/avatar/avatar1.png"
+                                     alt="User Avatar"></div>
+                            <h3 class="widget-user-username">{{ user.full_name }}</h3>
+                            <h5 class="widget-user-desc">{{ user.position }}</h5>
+                        </div>
+                        <div class="box-footer no-padding">
+                            <ul class="nav nav-stacked">
+                                <li><a href="#">Projects <span
+                                        class="pull-right badge bg-blue">{{ user.projects }}</span></a></li>
+                                <li><a href="#">Tasks <span class="pull-right badge bg-aqua">{{ user.tasks }}</span></a>
+                                </li>
+                                <li><a href="#">Completed Projects <span
+                                        class="pull-right badge bg-green">{{ user.completed_projects }}</span></a>
+                                </li>
+                                <li><a href="#">Followers <span
+                                        class="pull-right badge bg-red">{{ user.followers }}</span></a></li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
-            </div>
+            </a>
+            {% endfor %}
         </div>
     </div>
     <style type="text/css">
@@ -166,10 +167,16 @@
 </div>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-F1RTS0P1CD"></script>
 <script>window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
 
-        gtag('config', 'G-F1RTS0P1CD');
+function gtag() {
+    dataLayer.push(arguments);
+}
+
+gtag('js', new Date());
+
+gtag('config', 'G-F1RTS0P1CD');
 </script>
 </body>
 </html>
+
+
