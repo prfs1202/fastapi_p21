@@ -49,10 +49,18 @@
                 <header class="panel-heading"> Category</header>
                 <div class="panel-body">
                     <ul class="nav prod-cat">
-                        {% for category in categories %}
-                            <li><a href="#"><i class="fa fa-angle-right"></i> {{ category.name}}</a>
+                        <li>
+                            {% for categoryd in categories %}
+                                <a href="#">
+                                    <i class="fa fa-angle-right"></i> {{ category.name }}
+                                </a>
+                                {% for subcategory in category.subcategories %}
+                                    <ul class="nav">
+                                        <li><a href="#">- {{ subcategory.name }}</a></li>
+                                    </ul>
+                                {% endfor %}
+                            {% endfor %}
                         </li>
-                        {% endfor %}
                     </ul>
                 </div>
             </section>
