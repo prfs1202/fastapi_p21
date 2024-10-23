@@ -1,10 +1,11 @@
 from datetime import datetime
 
+from faker import Faker
 from sqlalchemy import BigInteger, delete as sqlalchemy_delete, DateTime, update as sqlalchemy_update, func
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, AsyncAttrs
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.future import select
-from sqlalchemy.orm import sessionmaker, DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.orm import sessionmaker, DeclarativeBase, Mapped, mapped_column, selectinload
 
 from config import conf
 
@@ -13,7 +14,13 @@ class Base(AsyncAttrs, DeclarativeBase):
 
     @declared_attr
     def __tablename__(self) -> str:
-        __name = self.__name__.lower()
+        __name = self.__name__[:1]
+        for i in self.__name__[1:]:
+            if i.isupper():
+                __name += '_'
+            __name += i
+        __name = __name.lower()
+
         if __name.endswith('y'):
             __name = __name[:-1] + 'ie'
         return __name + 's'
@@ -29,7 +36,7 @@ class AsyncDatabaseSession:
 
     def init(self):
         self._engine = create_async_engine(conf.db.db_url)
-        self._session = sessionmaker(self._engine, expire_on_commit=False, class_=AsyncSession)()
+        self._session = sessionmaker(self._engine, class_=AsyncSession)()
 
     async def create_all(self):
         async with self._engine.begin() as conn:
@@ -73,8 +80,10 @@ class AbstractClass:
         await cls.commit()
 
     @classmethod
-    async def get(cls, id_):
-        query = select(cls).where(cls.id == id_)
+    async def get(cls, criteria, *, relationship=None):
+        query = select(cls).where(criteria)
+        if relationship:
+            query = query.options(selectinload(relationship))
         return (await db.execute(query)).scalar()
 
     @classmethod
@@ -83,18 +92,40 @@ class AbstractClass:
         return (await db.execute(query)).scalar()
 
     @classmethod
+    async def generate(cls, count: int = 1):
+        return Faker()
+
+    @classmethod
     async def delete(cls, id_):
         query = sqlalchemy_delete(cls).where(cls.id == id_)
         await db.execute(query)
         await cls.commit()
 
     @classmethod
-    async def filter(cls, criteria):
-        return (await db.execute(select(cls).where(criteria))).scalars()
+    async def filter(cls, criteria, *, relationship=None, columns=None):
+        if columns:
+            query = select(*columns)
+        else:
+            query = select(cls)
+
+        query = query.where(criteria)
+
+        if relationship:
+            query = query.options(selectinload(relationship))
+        return (await db.execute(query)).scalars().all()
 
     @classmethod
     async def all(cls):
-        return (await db.execute(select(cls))).scalars()
+        return (await db.execute(select(cls))).scalars().all()
+
+    # def run_async(self, func, *args, **kwargs):
+    #     return asyncio.run(func(*args, **kwargs))
+
+    def convert_uzs(self, amount: int):
+        return amount * current_price
+
+    def convert_usd(self, amount: int):
+        return amount // current_price
 
 
 class BaseModel(Base, AbstractClass):
@@ -109,5 +140,3 @@ class CreatedBaseModel(BaseModel):
     __abstract__ = True
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-
-

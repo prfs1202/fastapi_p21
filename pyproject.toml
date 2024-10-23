@@ -23,6 +23,7 @@ pyjwt = "^2.9.0"
 itsdangerous = "^2.2.0"
 python-slugify = "^8.0.4"
 bcrypt = "^4.2.0"
+faker = "^30.8.0"
 
 
 

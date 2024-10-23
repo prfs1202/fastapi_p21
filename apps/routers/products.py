@@ -1,4 +1,5 @@
 from fastapi import APIRouter
+from sqlalchemy import select, or_
 from starlette.requests import Request
 
 from apps.models import Product, Category
@@ -17,11 +18,11 @@ product_router = APIRouter()
 @product_router.get("/", name='product_list')
 async def get_all_products(request: Request, category: int = None):
     if category:
-        products = await Product.filter(Product.category_id == category)
+        subquery = select(Category.id).where(or_(Category.parent_id == category, Category.id == category))
+        products = await Product.filter(Product.category_id.in_(subquery))
     else:
         products = await Product.all()
-
-    categories = await Category.all()
+    categories = await Category.filter(Category.parent_id == None, relationship=Category.subcategories)
     context = {
         'products': products,
         'categories': categories
@@ -31,7 +32,7 @@ async def get_all_products(request: Request, category: int = None):
 
 @product_router.get("/detail/{slug}", name='product_detail')
 async def get_product(request: Request, slug: str):
-    product = await Product.get_by_slug(slug)
+    product = await Product.get(Product.slug == slug)
     context = {
         'product': product
     }
